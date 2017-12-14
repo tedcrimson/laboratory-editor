@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06fee4ff3fa6edc4db4fd7d663e65f16, type: 3}
+  m_Name: Laboratory52
+  m_EditorClassIdentifier: 
+  nodes:
+  - {fileID: 114489883099951948}
+--- !u!114 &114489883099951948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71fd0cdd5769cd8469e0084f284915f3, type: 3}
+  m_Name: Input Node
+  m_EditorClassIdentifier: 
+  windowRect:
+    serializedVersion: 2
+    x: 145
+    y: 169
+    width: 200
+    height: 200
+  windowTitle: Input Node
+  amount: 0
+  temperature: 0
+  substance:
+    name: Water
+    chemical_name: H2O
+    boiling_point: 100
+    aggregate_state: 1

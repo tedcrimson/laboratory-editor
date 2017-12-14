@@ -1,41 +1,49 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 public class OutputNode : BaseNode {
-	private string result = "";
-	private BaseInputNode inputNode;
+
+	private SubstanceInput inputNode;
 	private Rect inputNodeRect;
 
-	public OutputNode(){
+	public override void SetWindow(Vector2 mousePos){
+		// base.SetWindow(mousePos);
 		windowTitle = "Output Node";
+		windowRect = new Rect(mousePos.x, mousePos.y, 200, 200);
+
 		// hasInputs = true;
 	}
 
 	public override void DrawWindow(){
-		base.DrawWindow();
+		// base.DrawWindow();
 
+		GUILayout.Label("Result:");
 		Event e = Event.current;
 
-		string input1Title = "None";
-		if(inputNode)
+		string inputTitle = "" ;
+		if(inputNode != null)
 		{
-			input1Title = inputNode.getResult();
-		}
+			inputTitle = inputNode.substance.name;
+			EditorGUILayout.FloatField("Amount", inputNode.amount);
+			EditorGUILayout.FloatField("Temperature", inputNode.temperature);
 
-		GUILayout.Label("Input 1: "+ input1Title);
+		}
+		GUILayout.Label("Input: "+ inputTitle);
+
 
 		if(e.type == EventType.Repaint)
 		{
 			inputNodeRect = GUILayoutUtility.GetLastRect();
 		}
-		GUILayout.Label("Result: " + result);
 
+		
 	}
 
 	public override void DrawCurves(Color c)
 	{
-		if(inputNode){
+		if(inputNode != null){
 			Rect rect = windowRect;
 			rect.x += inputNodeRect.x;
 			rect.y += inputNodeRect.y + inputNodeRect.height/2;
@@ -51,8 +59,8 @@ public class OutputNode : BaseNode {
 		}
 	}
 
-	public override BaseInputNode ClickedOnInput(Vector2 pos){
-		BaseInputNode retVal = null;
+	public override BaseNode ClickedOnInput(Vector2 pos){
+		BaseNode retVal = null;
 		pos.x -= windowRect.x;
 		pos.y -= windowRect.y;
 
@@ -63,12 +71,14 @@ public class OutputNode : BaseNode {
 		return retVal;
 	}
 
-	public override void SetInput(BaseInputNode inputNode, Vector2 clickPos){
+	public override void SetInput(BaseNode inputNode, Vector2 clickPos){
+
 		clickPos.x -= windowRect.x;
 		clickPos.y -= windowRect.y;
 
 		if(inputNodeRect.Contains(clickPos)){
-			this.inputNode = inputNode;
+		Debug.Log("Set input" + windowTitle + " To : " + inputNode.windowTitle);
+			this.inputNode = (SubstanceInput)inputNode;
 		}
 	}
 }

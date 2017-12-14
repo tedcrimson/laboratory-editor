@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-public class CalcNode : BaseInputNode
+public class CalcNode : SubstanceInput
 {
 
-    private BaseInputNode input1;
+    private BaseNode input1;
     private Rect input1Rect;
 
-    private BaseInputNode input2;
+    private BaseNode input2;
     private Rect input2Rect;
+
+
 
     private CalculationType calculationType;
     public enum CalculationType
@@ -21,49 +23,64 @@ public class CalcNode : BaseInputNode
         Div
     }
 
-    public CalcNode()
+    public override void SetWindow(Vector2 mousePos)
     {
         windowTitle = "CalculationType";
+        windowRect = new Rect(mousePos.x, mousePos.y, 200, 100);
         // hasInputs = true;
+        // hasOutputs = true;
     }
 
-    public override void DrawWindow()
-    {
-        // base.DrawCurves();
-        Event e = Event.current;
-        calculationType = (CalculationType)EditorGUILayout.EnumPopup("Calculation Type", calculationType);
+    // public override void DrawWindow()
+    // {
+    //     base.DrawWindow();
+    //     Event e = Event.current;
+    //     calculationType = (CalculationType)EditorGUILayout.EnumPopup("Calculation Type", calculationType);
 
-        string input1Title = "None";
+    //     Substance input1Title = null;
 
-        if (input1)
-        {
-            input1Title = input1.getResult();
-        }
+    //     if (input1)
+    //     {
+    //         input1Title = input1.getResult();
+    //     }
 
-        GUILayout.Label("Input 1: " + input1Title);
+    //     GUILayout.Label("Input 1: " + input1Title);
 
-        if (e.type == EventType.Repaint)
-        {
-            input1Rect = GUILayoutUtility.GetLastRect();
-        }
+    //     if (e.type == EventType.Repaint)
+    //     {
+    //         input1Rect = GUILayoutUtility.GetLastRect();
+    //     }
 
 
-        string input2Title = "None";
+    //     Substance input2Title;
 
-        if (input2)
-        {
-            input2Title = input2.getResult();
-        }
+    //     if (input2)
+    //     {
+    //         input2Title = input2.getResult();
+    //     }
 
-        GUILayout.Label("Input 2: " + input2Title);
+    //     GUILayout.Label("Input 2: " + input2Title);
 
-        if (e.type == EventType.Repaint)
-        {
-            input2Rect = GUILayoutUtility.GetLastRect();
-        }
-    }
+    //     if (e.type == EventType.Repaint)
+    //     {
+    //         input2Rect = GUILayoutUtility.GetLastRect();
+    //     }
 
-    public override void SetInput(BaseInputNode inputNode, Vector2 clickPos)
+    //     Substance outputTitle = this.getResult();
+    //     // if (output)
+    //     // {
+    //     // }
+
+
+    //     GUILayout.Label("Output: " + outputTitle);
+
+    //     // if (e.type == EventType.Repaint)
+    //     // {
+    //     //     outputRect = GUILayoutUtility.GetLastRect();
+    //     // }
+    // }
+
+    public override void SetInput(BaseNode inputNode, Vector2 clickPos)
     {
         clickPos.x -= windowRect.x;
         clickPos.y -= windowRect.y;
@@ -73,11 +90,24 @@ public class CalcNode : BaseInputNode
         else if (input2Rect.Contains(clickPos))
             input2 = inputNode;
 
+
     }
+    // public override void SetOutput(BaseNode outputNode, Vector2 clickPos)
+    // {
+    //     base.SetOutput(outputNode, clickPos);
+
+    //     output = outputNode;
+    //     // clickPos.x -= windowRect.x;
+    //     // clickPos.y -= windowRect.y;
+
+    //     // if(outputRect.Contains(clickPos)){
+    //     // }
+
+    // }
 
     public override void DrawCurves(Color c)
     {
-        if (input1)
+        if (input1 != null)
         {
             Rect rect = windowRect;
             rect.x += input1Rect.x;
@@ -88,7 +118,7 @@ public class CalcNode : BaseInputNode
             NodeEditor.DrawNodeCurve(input1.windowRect, rect, c);
         }
 
-        if (input2)
+        if (input2 != null)
         {
             Rect rect = windowRect;
             rect.x += input1Rect.x;
@@ -100,46 +130,46 @@ public class CalcNode : BaseInputNode
         }
     }
 
-    public override string getResult()
-    {
-        float input1Value = 0;
-        float input2Value = 0;
+    // public override string getResult()
+    // {
+    //     float input1Value = 0;
+    //     float input2Value = 0;
 
-        if (input1)
-        {
-            string input1Raw = input1.getResult();
-            float.TryParse(input1Raw, out input1Value);
-        }
+    //     if (input1)
+    //     {
+    //         string input1Raw = input1.getResult();
+    //         float.TryParse(input1Raw, out input1Value);
+    //     }
 
 
-        if (input2)
-        {
-            string input2Raw = input2.getResult();
-            float.TryParse(input2Raw, out input2Value);
-        }
+    //     if (input2)
+    //     {
+    //         string input2Raw = input2.getResult();
+    //         float.TryParse(input2Raw, out input2Value);
+    //     }
 
-        string result = "false";
+    //     string result = "false";
 
-        switch (calculationType)
-        {
-            case CalculationType.Add:
-                result = (input1Value + input2Value).ToString();
-                break;
-            case CalculationType.Sub:
-                result = (input1Value - input2Value).ToString();
-                break;
-            case CalculationType.Mul:
-                result = (input1Value * input2Value).ToString();
-                break;
-            case CalculationType.Div:
-                result = (input1Value / input2Value).ToString();
-                break;
-        }
-		return result;
-    }
+    //     switch (calculationType)
+    //     {
+    //         case CalculationType.Add:
+    //             result = (input1Value + input2Value).ToString();
+    //             break;
+    //         case CalculationType.Sub:
+    //             result = (input1Value - input2Value).ToString();
+    //             break;
+    //         case CalculationType.Mul:
+    //             result = (input1Value * input2Value).ToString();
+    //             break;
+    //         case CalculationType.Div:
+    //             result = (input1Value / input2Value).ToString();
+    //             break;
+    //     }
+	// 	return result;
+    // }
 
-	public override BaseInputNode ClickedOnInput(Vector2 pos){
-		BaseInputNode retVal = null;
+	public override BaseNode ClickedOnInput(Vector2 pos){
+		BaseNode retVal = null;
 
 		pos.x -= windowRect.x;
 		pos.y -= windowRect.y;

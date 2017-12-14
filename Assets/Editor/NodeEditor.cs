@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -35,7 +34,7 @@ public class SubstanceData
 public class NodeEditor : EditorWindow
 {
 
-    private List<BaseNode> windows = new List<BaseNode>();
+    private List<BaseNode> windows;
 
     private Vector2 mousePos;
     private BaseNode selectedNode;
@@ -44,11 +43,39 @@ public class NodeEditor : EditorWindow
     private SubstanceData substanceData;
     private string log;
 
+    private LaboratoryExperiment experiment;
+
+    public Texture2D knobTexture;
+
+    public static NodeEditor Instance;
+
+
     [MenuItem("Chemistry/Node Editor")]
     static void ShowEditor()
     {
         NodeEditor editor = EditorWindow.GetWindow<NodeEditor>();
+        Instance = editor;
     }
+
+
+    public string[] SubstanceNames
+    {
+        get
+        {
+            string[] strings = new string[substanceData.Substances.Count];
+            for (int i = 0; i < substanceData.Substances.Count; i++)
+            {
+                strings[i] = substanceData.Substances[i].name;
+            }
+
+            return strings;
+        }
+    }
+    public Substance GetSubstance(int i)
+    {
+        return substanceData.Substances[i];
+    }
+
 
     /// <summary>
     /// OnGUI is called for rendering and handling GUI events.
@@ -56,8 +83,10 @@ public class NodeEditor : EditorWindow
     /// </summary>
     void OnGUI()
     {
+
         if (substanceData == null)
         {
+
             if (GUILayout.Button("Load Substances"))
             {
                 TextAsset asset = Resources.Load<TextAsset>("Substances");
@@ -81,10 +110,68 @@ public class NodeEditor : EditorWindow
 
         EditorGUILayout.LabelField(log);
         if (substanceData == null) return;
-        if (GUILayout.Button("Save Experiment"))
+
+        if (GUILayout.Button("New Experiment"))
         {
+            Instance = this;
+            windows = new List<BaseNode>();
+            experiment = null;//new LaboratoryExperiment();
+        }
+        if (GUILayout.Button("Load Experiment"))
+        {
+            string absPath = EditorUtility.OpenFilePanel("Select Experiment", "", "");
+            if (absPath.StartsWith(Application.dataPath))
+            {
+                string relPath = absPath.Substring(Application.dataPath.Length - "Assets".Length);
+                experiment = AssetDatabase.LoadAssetAtPath(relPath, typeof(LaboratoryExperiment)) as LaboratoryExperiment;
+                // if (experiment.stepList == null)
+                //     experiment.stepList = new List<StepObject>();
+                if (experiment)
+                {
+                    windows = experiment.nodes;
+                    EditorPrefs.SetString("ObjectPath", relPath);
+                }
+            }
 
         }
+        if (experiment == null && GUILayout.Button("Save Experiment"))
+        {
+
+            experiment = ScriptableObject.CreateInstance<LaboratoryExperiment>();
+            // List<BaseNode> nodes = new List<BaseNode>();
+            CreateAsset<LaboratoryExperiment>("Laboratory", experiment);
+
+            foreach (var w in windows)
+            {
+                w.name = w.windowTitle;
+
+                AssetDatabase.AddObjectToAsset(w, experiment);
+                AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(w));
+
+                // nodes.Add(w);
+            }
+            experiment.nodes = windows;
+
+            // Reimport the asset after adding an object.
+            // Otherwise the change only shows up when saving the project
+        }
+        else if (experiment != null)
+        {
+            EditorGUILayout.LabelField("Auto-Save");
+        }
+
+        if (windows == null) return;
+
+        Handles.color = Color.gray;
+        for (int i = 90; i < position.size.y; i += 30)
+        {
+            Handles.DrawLine(new Vector3(0, i), new Vector3(position.size.x, i));
+        }
+        for (int i = 0; i < position.size.x; i += 30)
+        {
+            Handles.DrawLine(new Vector3(i, 90), new Vector3(i, position.size.y));
+        }
+        Handles.color = Color.white;
 
         Event e = Event.current;
 
@@ -147,7 +234,10 @@ public class NodeEditor : EditorWindow
 
             if (clickedOnWindow && !windows[selectIndex].Equals(selectedNode))
             {
-                windows[selectIndex].SetInput((BaseInputNode)selectedNode, mousePos);
+                // Debug.Log("Set Output");
+                windows[selectIndex].SetInput((BaseNode)selectedNode, mousePos);
+                // selectedNode.SetOutput(windows[selectIndex], mousePos);
+                // Debug.Log("Set Output");
                 makeTransitionMode = false;
                 selectedNode = null;
             }
@@ -199,7 +289,8 @@ public class NodeEditor : EditorWindow
         foreach (BaseNode n in windows)
         {
             // Debug.Log(n == selectedNode ? Color.cyan : Color.black);
-            n.DrawCurves(n == selectedNode ? Color.cyan : Color.black);
+            if (n)
+                n.DrawCurves(n == selectedNode ? Color.red : Color.black);
         }
 
         BeginWindows();
@@ -216,45 +307,52 @@ public class NodeEditor : EditorWindow
         windows[id].DrawWindow();
         GUI.DragWindow();
     }
+
+    private void AddNode<T>() where T : BaseNode
+    {
+        T inputNode = ScriptableObject.CreateInstance<T>();
+        inputNode.SetWindow(mousePos);
+        windows.Add(inputNode);
+        if (experiment != null)
+        {
+            inputNode.name = inputNode.windowTitle;
+            AssetDatabase.AddObjectToAsset(inputNode, experiment);
+            AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(inputNode));
+        }
+    }
+
     private void ContextCallback(object obj)
     {
         string clb = obj.ToString();
 
         if (clb.Equals("inputNode"))
         {
-            SubstanceInput inputNode = new SubstanceInput();
-            inputNode.windowRect = new Rect(mousePos.x, mousePos.y, 200, 150);
-            windows.Add(inputNode);
+            AddNode<SubstanceInput>();
         }
         else if (clb.Equals("outputNode"))
         {
-            OutputNode outputNode = new OutputNode();
-            outputNode.windowRect = new Rect(mousePos.x, mousePos.y, 200, 100);
-            windows.Add(outputNode);
+            AddNode<OutputNode>();
+
         }
         else if (clb.Equals("calcNode"))
         {
-            CalcNode calcNode = new CalcNode();
-            calcNode.windowRect = new Rect(mousePos.x, mousePos.y, 200, 100);
-            windows.Add(calcNode);
+            AddNode<CalcNode>();
+
         }
         else if (clb.Equals("storageNode"))
         {
-            StorageEquipment stor = new StorageEquipment();
-            stor.windowRect = new Rect(mousePos.x, mousePos.y, 200, 200);
-            windows.Add(stor);
+            AddNode<StorageEquipment>();
+
         }
         else if (clb.Equals("boilingNode"))
         {
-            BoilingEquipment stor = new BoilingEquipment();
-            stor.windowRect = new Rect(mousePos.x, mousePos.y, 200, 200);
-            windows.Add(stor);
+            AddNode<BoilingEquipment>();
+
         }
         else if (clb.Equals("coolerNode"))
         {
-            CoolerEquipment cool = new CoolerEquipment();
-            cool.windowRect = new Rect(mousePos.x, mousePos.y, 200, 150);
-            windows.Add(cool);
+            AddNode<CoolerEquipment>();
+
         }
 
         else if (clb.Equals("makeTransition"))
@@ -296,6 +394,12 @@ public class NodeEditor : EditorWindow
             {
                 BaseNode selNode = windows[selectIndex];
                 windows.RemoveAt(selectIndex);
+                if (experiment != null)
+                {
+                    DestroyImmediate(selNode, true);
+                    AssetDatabase.SaveAssets();
+                }
+
                 foreach (BaseNode b in windows)
                 {
                     b.NodeDeleted(selNode);
@@ -311,19 +415,34 @@ public class NodeEditor : EditorWindow
         Vector3 endPos = new Vector3(end.x + end.width / 2, end.y + end.height / 2, 0);
         Vector3 startTan = startPos + Vector3.right * 150;
         Vector3 endTan = endPos + Vector3.left * 150;
-        Color shadowCol = new Color(0, 0, 0, 0.06f);
+        Color shadowCol = new Color(col.r, col.g, col.b, 0.06f);
 
         for (int i = 0; i < 3; i++)
         {
             Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
 
         }
-        Debug.Log(col);
 
         if (col == Color.black)
             return;
 
         Handles.DrawBezier(startPos, endPos, startTan, endTan, col, null, 1);
 
+    }
+
+    private static void CreateAsset<T>(string path, T asset = null) where T : ScriptableObject
+    {
+        if (asset == null)
+            asset = ScriptableObject.CreateInstance<T>();
+
+        if (!AssetDatabase.IsValidFolder(path))
+            AssetDatabase.CreateFolder(path, path);
+
+        AssetDatabase.CreateAsset(asset, "Assets/Resources/" + path + Random.Range(0, 100) + ".asset");
+        AssetDatabase.SaveAssets();
+
+        EditorUtility.FocusProjectWindow();
+
+        Selection.activeObject = asset;
     }
 }
